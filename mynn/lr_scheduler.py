@@ -8,10 +8,8 @@ class scheduler():
         self.step_count = 0
 
     @abstractmethod
-    def step(self):  # 添加 self 参数
+    def step(self):
         pass
-
-# 其他代码保持不变
 
 
 class StepLR(scheduler):
@@ -40,11 +38,10 @@ class MultiStepLR(scheduler):
         super().__init__(optimizer)
         self.milestones = milestones
         self.gamma = gamma
-        self.last_milestone = 0  # Track the last milestone reached
+        self.last_milestone = 0
 
     def step(self) -> None:
         self.step_count += 1
-        # Check if current step count has passed any new milestones
         for milestone in self.milestones[self.last_milestone:]:
             if self.step_count >= milestone:
                 self.optimizer.init_lr *= self.gamma
@@ -65,5 +62,4 @@ class ExponentialLR(scheduler):
 
     def step(self) -> None:
         self.step_count += 1
-        # Apply exponential decay every step
         self.optimizer.init_lr *= self.gamma

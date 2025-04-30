@@ -17,24 +17,21 @@ def test_train(
     dropout_rates=[],
     use_nesterov=False,
     batch_size=64,
-    loss_type='cross_entropy'  # 新增参数，用于控制损失函数类型
+    loss_type='cross_entropy'
 ):
-    # 固定随机种子
+
     np.random.seed(309)
 
-    # 创建实验记录目录
     os.makedirs('./training_logs', exist_ok=True)
     log_file = f'./training_logs/training_log_cnn.json'
 
-    # 初始化日志数据结构
     training_log = {
-        'parameters': locals().copy(),  # 记录所有传入参数
+        'parameters': locals().copy(),
         'start_time': datetime.now().isoformat(),
         'epochs': []
     }
-    training_log['parameters'].pop('self', None)  # 移除可能的self参数
+    training_log['parameters'].pop('self', None)
 
-    # --- 数据加载与预处理 ---
     print("Loading MNIST data...")
     train_images_path = r'./dataset/MNIST/train-images-idx3-ubyte.gz'
     train_labels_path = r'./dataset/MNIST/train-labels-idx1-ubyte.gz'
@@ -48,7 +45,6 @@ def test_train(
         magic, num = unpack('>2I', f.read(8))
         train_labs = np.frombuffer(f.read(), dtype=np.uint8)
 
-    # 创建验证集
     idx = np.random.permutation(np.arange(num))
     train_imgs = train_imgs[idx]
     train_labs = train_labs[idx]
@@ -57,17 +53,14 @@ def test_train(
     train_imgs = train_imgs[10000:]
     train_labs = train_labs[10000:]
 
-    # 标准化数据
     train_mean = train_imgs.mean()
     train_std = train_imgs.std()
     train_imgs = (train_imgs - train_mean) / (train_std + 1e-8)
     valid_imgs = (valid_imgs - train_mean) / (train_std + 1e-8)
 
-    # --- 模型构建 ---
     print("Building CNN model...")
     model = nn.models.Model_CNN()
 
-    # --- 训练配置 ---
     if momentum:
         optimizer = nn.optimizer.MomentGD(
             init_lr=learning_rate,
@@ -105,10 +98,8 @@ def test_train(
         batch_size=batch_size
     )
 
-    # --- 训练循环 ---
     print("\nStart training...")
 
-    # 使用runner.train()进行训练
     runner.train(
         train_data=(train_imgs, train_labs),
         valid_data=(valid_imgs, valid_labs),
@@ -118,16 +109,13 @@ def test_train(
         save_name=f'best_model_cnn'
     )
 
-    # 获取训练结果
     best_valid_acc = max(log['dev_score']
                          for log in runner.training_logs if 'dev_score' in log)
 
-    # 更新日志
     training_log['best_valid_acc'] = float(best_valid_acc)
     training_log['end_time'] = datetime.now().isoformat()
     training_log['training_details'] = runner.training_logs
 
-    # 保存最终日志
     with open(log_file, 'w') as f:
         json.dump(training_log, f, indent=4)
 
@@ -135,7 +123,6 @@ def test_train(
         f"\nTraining completed! Best validation accuracy: {best_valid_acc:.4f}")
     print(f"Detailed log saved to: {log_file}")
 
-    # --- 可视化训练曲线 ---
     _, axes = plt.subplots(1, 2)
     axes = axes.reshape(-1)
     _.set_tight_layout(1)
@@ -144,24 +131,20 @@ def test_train(
 
 
 if __name__ == '__main__':
-    # 示例配置
-    # 修改 configs 中的权重衰减系数
     configs = [{
         'learning_rate': 0.001,
         'momentum': 0.95,
         'lr_milestones': [15, 30],
-        'weight_decay_lambda': 0.00001,  # 减小权重衰减系数
+        'weight_decay_lambda': 0.00001,
         'dropout_rates': [0.3, 0.3],
         'use_nesterov': True,
         'batch_size': 256,
         'loss_type': 'cross_entropy'}
     ]
 
-    # 创建必要的目录
     os.makedirs('./best_models', exist_ok=True)
     os.makedirs('./training_logs', exist_ok=True)
 
-    # 依次进行不同配置的训练
     for config in configs:
         print(f"Training with config: {config['loss_type']}")
         test_train(**config)

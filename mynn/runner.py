@@ -185,13 +185,12 @@ class ImageAugmenter:
         Returns:
             Augmented images
         """
-        if len(images.shape) == 2:  # Flattened images (MLP case)
+        if len(images.shape) == 2:
             orig_shape = images.shape
-            # Reshape to 4D for augmentations
             images = images.reshape(-1, 28, 28, 1)
             augmented = np.array([self._augment_single(img) for img in images])
             return augmented.reshape(orig_shape)
-        else:  # Already in image format (CNN case)
+        else:
             return np.array([self._augment_single(img) for img in images])
 
     def _augment_single(self, image):
@@ -204,7 +203,6 @@ class ImageAugmenter:
         Returns:
             Augmented image
         """
-        # Randomly select which augmentations to apply
         aug_fns = np.random.choice(
             self.augmentations,
             size=np.random.randint(0, len(self.augmentations)+1),
@@ -231,10 +229,8 @@ class ImageAugmenter:
         h, w, c = image.shape
         dx, dy = np.random.randint(-max_shift, max_shift+1, size=2)
 
-        # Create translation matrix
         M = np.float32([[1, 0, dx], [0, 1, dy]])
 
-        # Apply translation
         shifted = np.zeros_like(image)
         for i in range(c):
             shifted[:, :, i] = cv2.warpAffine(image[:, :, i], M, (w, h))
@@ -255,10 +251,8 @@ class ImageAugmenter:
         h, w, c = image.shape
         angle = np.random.uniform(-max_angle, max_angle)
 
-        # Get rotation matrix
         M = cv2.getRotationMatrix2D((w/2, h/2), angle, 1)
 
-        # Apply rotation
         rotated = np.zeros_like(image)
         for i in range(c):
             rotated[:, :, i] = cv2.warpAffine(image[:, :, i], M, (w, h))
@@ -279,20 +273,17 @@ class ImageAugmenter:
         h, w, c = image.shape
         scale = np.random.uniform(*scale_range)
 
-        # Crop or pad to maintain size
         new_h, new_w = int(h * scale), int(w * scale)
 
-        # Resize
         zoomed = np.zeros_like(image)
         for i in range(c):
             channel = cv2.resize(image[:, :, i], (new_w, new_h))
 
-            # Center crop or pad
-            if scale > 1:  # Zoom in - crop
+            if scale > 1:
                 start_h = (new_h - h) // 2
                 start_w = (new_w - w) // 2
                 zoomed[:, :, i] = channel[start_h:start_h+h, start_w:start_w+w]
-            else:  # Zoom out - pad
+            else:
                 start_h = (h - new_h) // 2
                 start_w = (w - new_w) // 2
                 zoomed[start_h:start_h+new_h,
