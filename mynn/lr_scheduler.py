@@ -8,8 +8,10 @@ class scheduler():
         self.step_count = 0
 
     @abstractmethod
-    def step():
+    def step(self):  # 添加 self 参数
         pass
+
+# 其他代码保持不变
 
 
 class StepLR(scheduler):
